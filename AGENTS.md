@@ -12,7 +12,7 @@ Use this file as guidance when contributing code, analysis workflows, and automa
 
 ## Recommended Repository Layout
 
-- `src/sample/` for reusable package code.
+- `src/` for reusable package code.
 - `notebooks/` for marimo apps (`*.py`).
 - `tests/` for automated tests.
 - `docs/` for project documentation.
@@ -35,8 +35,6 @@ Typical commands:
 Test commands:
 
 - Run all tests: `uv run pytest`
-- Run one test file: `uv run pytest tests/test_arithmetic.py`
-- Run one test by name: `uv run pytest -k test_div`
 
 ## C++ Guidelines and Tooling
 
@@ -59,7 +57,7 @@ CMake/CTest workflow:
 - Prefer marimo for all new interactive research workflows.
 - Place marimo notebooks in `notebooks/`.
 - Do not add new Jupyter notebooks (`.ipynb`) unless there is a compelling external requirement.
-- Keep notebooks thin: import reusable logic from `src/sample/`.
+- Keep notebooks thin: import reusable logic from `src/`.
 
 ## Validation and Reproducibility
 

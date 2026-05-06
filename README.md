@@ -1,26 +1,18 @@
-# Skelton Project
+# Weibel Instability Analysis
 
-This repository is a starter template for a scientific research project.
+This repository is for analyzing Weibel instability PIC simulation data.
 
 ## What you can do here
 
-- Build reusable code for models and analysis
+- Generate summary plots from PIC-NIX simulation data
 - Run interactive notebooks with marimo
 - Track tests and documentation as the project grows
-- Publish notebook results to GitHub Pages (`/main/` and `/develop/`)
-
-## Published pages
-
-- Landing page: <https://amanotk.github.io/skelton-project/>
-- Stable notebooks (`main`): <https://amanotk.github.io/skelton-project/main/>
-- Development notebooks (`develop`): <https://amanotk.github.io/skelton-project/develop/>
 
 ## Directory structure
 
-- `src/`: reusable Python code
+- `src/`: reusable Python code (`summary.py` for snapshot plotting)
 - `notebooks/`: interactive marimo notebooks
 - `tests/`: automated tests
-- `docs/`: project documentation
 - `work/`: large files and scratch outputs (not committed)
 
 ## Quick start
@@ -29,24 +21,20 @@ This repository is a starter template for a scientific research project.
 
 ```bash
 uv sync
+uv pip install -e ${HOME}/pic-nix/python/
 ```
 
-2. Run tests:
+2. Run snapshot plots from CLI:
 
 ```bash
-uv run pytest
+uv run python src/summary.py /path/to/profile.msg STEP -t field
+uv run python src/summary.py /path/to/profile.msg STEP -t moment
 ```
 
 3. Open a notebook:
 
 ```bash
-uv run marimo run notebooks/demo_static.py
-```
-
-WASM-focused example notebook:
-
-```bash
-uv run marimo run notebooks/demo_wasm.py
+uv run marimo edit notebooks/snapshot.py
 ```
 
 ## Marimo notebook workflow
@@ -56,25 +44,10 @@ uv run marimo run notebooks/demo_wasm.py
 - Script-mode check: `uv run notebooks/<notebook-name>.py`
 - Notebook lint check: `uvx marimo check notebooks/<notebook-name>.py`
 
-## GitHub Pages export mode
-
-- Default behavior: notebooks are published as static HTML.
-- To publish a notebook as interactive WASM, list it in `notebooks/publish.toml`.
-
-Example:
-
-```toml
-wasm = [
-  "notebooks/demo_wasm.py",
-]
-```
-
-`demo_static.py` imports the local `sample` module; `demo_wasm.py` avoids local imports so it works in browser WASM mode.
-
 ## Recommended Git branching strategy
 
-- `main`: stable work (notebooks published to `/main/` on GitHub Pages)
-- `develop`: active development (notebooks published to `/develop/` on GitHub Pages)
+- `main`: stable work
+- `develop`: active development
 - `feature/*`: short-lived feature branches
 
 ### Development on `develop`
