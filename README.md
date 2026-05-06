@@ -21,8 +21,9 @@ This repository is for analyzing Weibel instability PIC simulation data.
 
 ```bash
 uv sync
-uv pip install -e ${HOME}/pic-nix/python/
 ```
+
+`picnix` is installed automatically from git.
 
 2. Run snapshot plots from CLI:
 

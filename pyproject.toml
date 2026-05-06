@@ -13,6 +13,7 @@ dependencies = [
   "matplotlib>=3.8",
   "numpy>=1.26",
   "pandas>=2.2",
+  "picnix @ git+https://github.com/amanotk/pic-nix.git#subdirectory=python",
   "pyzmq>=27.1.0",
   "scipy>=1.13",
 ]
@@ -33,6 +34,12 @@ select = ["E", "F", "I", "B", "UP"]
 
 [tool.ruff.lint.per-file-ignores]
 "notebooks/*.py" = ["B018"]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
