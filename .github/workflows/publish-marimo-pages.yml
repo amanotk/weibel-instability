@@ -1,10 +1,6 @@
 name: Publish Marimo Pages
 
 on:
-  push:
-    branches:
-      - main
-      - develop
   workflow_dispatch:
 
 permissions:
