@@ -22,6 +22,7 @@ work/
 
 # Notebook/runtime artifacts
 .ipynb_checkpoints/
+*__marimo__/
 
 # OS/editor noise
 .DS_Store

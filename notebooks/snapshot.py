@@ -10,78 +10,70 @@ def _():
 
     import marimo as mo
     import matplotlib
-    import matplotlib.pyplot as plt
     import picnix
 
-    from summary import plot_b_snapshot, plot_moment_snapshot
+    from src.summary import plot_field_snapshot, plot_moment_snapshot
 
     matplotlib.use("Agg")
-    return Path, mo, picnix, plot_b_snapshot, plot_moment_snapshot
-
-
-@app.cell
-def _(Path, mo):
-    import os
 
     repo_root = Path(__file__).parent.parent
     profiles = {}
     for p in sorted(repo_root.rglob("profile.msgpack")):
         profiles[str(p.relative_to(repo_root))] = str(p)
-    _info = f"Found {len(profiles)} profile(s)"
-    mo.md(_info)
-    return (profiles,)
+    return mo, picnix, plot_field_snapshot, plot_moment_snapshot, profiles
 
 
 @app.cell
 def _(mo, profiles):
-    profile = mo.ui.dropdown(
-        options=list(profiles.keys()),
+    profile_widget = mo.ui.dropdown(
+        options=list(profiles.keys()) if profiles else [],
         value=list(profiles.keys())[0] if profiles else None,
         label="Profile",
     )
-    profile
-    return (profile,)
+    profile_widget
+    return (profile_widget,)
 
 
 @app.cell
-def _(picnix, profile, profiles):
-    profile_path = profiles[profile.value] if profile.value else None
-    run = picnix.Run(profile_path) if profile_path else None
-    run
-    return (run,)
+def _(mo, picnix, profile_widget, profiles):
+    run = picnix.Run(profiles[profile_widget.value]) if profile_widget.value else None
+    step_options = sorted(run.get_step("field")) if run is not None else []
+    step_steps = [int(s) for s in step_options]
 
-
-@app.cell
-def _(mo, run):
-    steps = sorted(run.get_step("field")) if run is not None else []
-    step = mo.ui.dropdown(
-        options=[int(s) for s in steps],
-        value=int(steps[-1]) if steps else None,
+    step_widget = mo.ui.dropdown(
+        options=step_steps,
+        value=step_steps[-1] if step_steps else None,
         label="Step",
     )
-    step
-    return (step,)
+
+    plot_button = mo.ui.run_button(label="Update Plot")
+
+    mo.vstack([step_widget, plot_button])
+    return plot_button, run, step_steps, step_widget
 
 
 @app.cell
-def _(mo, plot_b_snapshot, run, step):
-    if run is not None and step.value is not None:
-        _fig, _ = plot_b_snapshot(run, step.value)
-        _display = _fig
+def _(
+    mo,
+    plot_button,
+    plot_field_snapshot,
+    plot_moment_snapshot,
+    profiles,
+    run,
+    step_steps,
+    step_widget,
+):
+    if not profiles:
+        display = mo.md("_No profiles found in repository._")
+    elif not step_steps:
+        display = mo.md("_Selected profile has no field data._")
+    elif plot_button.value and step_widget.value is not None:
+        fig1, _ = plot_field_snapshot(run, step_widget.value)
+        fig2, _ = plot_moment_snapshot(run, step_widget.value)
+        display = mo.vstack([fig1, fig2])
     else:
-        _display = mo.md("_Select a profile and step to plot._")
-    _display
-    return
-
-
-@app.cell
-def _(mo, plot_moment_snapshot, run, step):
-    if run is not None and step.value is not None:
-        _fig, _ = plot_moment_snapshot(run, step.value)
-        _display = _fig
-    else:
-        _display = mo.md("_Select a profile and step to plot._")
-    _display
+        display = mo.md("_Choose profile, step, and press Update Plot._")
+    display
     return
 
 

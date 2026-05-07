@@ -3,8 +3,8 @@
 import numpy as np
 
 
-def plot_b_snapshot(run, step, *, save=None):
-    """Plot 2D snapshot of Bx, By, Bz (mean over z) from a picnix Run.
+def plot_field_snapshot(run, step, *, save=None):
+    """Plot 2D snapshot of field components (mean over z) from a picnix Run.
 
     Parameters
     ----------
@@ -120,6 +120,7 @@ def plot_moment_snapshot(run, step, *, save=None):
         r"$n / n_{\mathrm{e}}$",
         r"$\delta V_x / V_{\mathrm{sh}}$",
         r"$\delta V_y / V_{\mathrm{sh}}$",
+        r"$\delta V_z / V_{\mathrm{sh}}$",
     ]
 
     xc = run.xc / np.sqrt(mime)
@@ -128,12 +129,12 @@ def plot_moment_snapshot(run, step, *, save=None):
 
     time = run.get_time_at("field", step) / np.sqrt(mime)
 
-    fig = plt.figure(figsize=(12, 10))
+    fig = plt.figure(figsize=(16, 10))
     gs = fig.add_gridspec(
         3,
-        6,
-        width_ratios=[1, 0.05, 1, 0.05, 1, 0.05],
-        left=0.10,
+        8,
+        width_ratios=[1, 0.05, 1, 0.05, 1, 0.05, 1, 0.05],
+        left=0.06,
         right=0.96,
         bottom=0.06,
         top=0.94,
@@ -143,7 +144,7 @@ def plot_moment_snapshot(run, step, *, save=None):
 
     axs = []
     for row in range(3):
-        axs.append([fig.add_subplot(gs[row, col]) for col in range(0, 6, 2)])
+        axs.append([fig.add_subplot(gs[row, col]) for col in range(0, 8, 2)])
 
     all_pos = []
 
@@ -151,17 +152,19 @@ def plot_moment_snapshot(run, step, *, save=None):
         n = um[..., s, 0].mean(axis=0)
         vx = um[..., s, 1].mean(axis=0) / (n + 1e-32)
         vy = um[..., s, 2].mean(axis=0) / (n + 1e-32)
+        vz = um[..., s, 3].mean(axis=0) / (n + 1e-32)
 
         n = n / mass[s]
         vx = (vx - bulk[s]) / vsh
         vy = vy / vsh
+        vz = vz / vsh
 
-        v_max = max(np.abs(vx).max(), np.abs(vy).max())
+        v_max = max(np.abs(vx).max(), np.abs(vy).max(), np.abs(vz).max())
 
-        panels = [n, vx, vy]
-        vmins = [0.0, -v_max, -v_max]
-        vmaxs = [n.max(), v_max, v_max]
-        cmaps = ["viridis", "RdBu_r", "RdBu_r"]
+        panels = [n, vx, vy, vz]
+        vmins = [0.0, -v_max, -v_max, -v_max]
+        vmaxs = [n.max(), v_max, v_max, v_max]
+        cmaps = ["viridis", "RdBu_r", "RdBu_r", "RdBu_r"]
 
         for col, (panel, vmin, vmax, cmap) in enumerate(
             zip(panels, vmins, vmaxs, cmaps, strict=True)
@@ -240,7 +243,7 @@ if __name__ == "__main__":
 
     if args.type == "field":
         save_path = args.output or f"field_snapshot_{args.step}.png"
-        fig, _ = plot_b_snapshot(run, args.step, save=save_path)
+        fig, _ = plot_field_snapshot(run, args.step, save=save_path)
     else:
         save_path = args.output or f"moment_snapshot_{args.step}.png"
         fig, _ = plot_moment_snapshot(run, args.step, save=save_path)
