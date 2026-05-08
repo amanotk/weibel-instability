@@ -3,6 +3,63 @@
 import numpy as np
 
 
+def plot_field_evolution(run, *, save=None):
+    """Plot time evolution of volume-averaged magnetic field energy components.
+
+    Parameters
+    ----------
+    run : picnix.Run
+        Loaded simulation run object.
+    save : str, optional
+        Filepath to save the figure.
+    """
+    from matplotlib import pyplot as plt
+
+    mime = run.config["parameter"]["mime"]
+    alpha = run.config["parameter"]["alpha"]
+    ush = run.config["parameter"]["ush"]
+    Beq = np.sqrt(alpha * (1 - alpha) * ush**2 * mime)
+
+    steps = run.get_step("field")
+    times = run.get_time("field")
+
+    bx2_list = []
+    by2_list = []
+    bz2_list = []
+
+    for step in steps:
+        data = run.read_at("field", step)
+        uf = data["uf"]
+        bx2_list.append(np.mean(uf[..., 3] ** 2) / Beq**2)
+        by2_list.append(np.mean(uf[..., 4] ** 2) / Beq**2)
+        bz2_list.append(np.mean(uf[..., 5] ** 2) / Beq**2)
+
+    wt = times / np.sqrt(mime)
+    bx2 = np.array(bx2_list)
+    by2 = np.array(by2_list)
+    bz2 = np.array(bz2_list)
+
+    fig = plt.figure(figsize=(6, 4))
+    ax = fig.gca()
+
+    ax.semilogy(wt, bx2, label=r"$B_x^2 / B_{\mathrm{eq}}^2$")
+    ax.semilogy(wt, by2, label=r"$B_y^2 / B_{\mathrm{eq}}^2$")
+    ax.semilogy(wt, bz2, label=r"$B_z^2 / B_{\mathrm{eq}}^2$")
+
+    ax.set_xlabel(r"$\omega_{\mathrm{pi}} t$")
+    ax.set_ylabel(r"$B_i^2 / B_{\mathrm{eq}}^2$")
+    ax.legend(loc="best")
+    ax.grid(True, which="both", alpha=0.3)
+    ax.set_ylim(1e-7, 1e-1)
+
+    fig.tight_layout()
+
+    if save:
+        fig.savefig(save)
+
+    return fig, ax
+
+
 def plot_field_snapshot(run, step, *, save=None):
     """Plot 2D snapshot of field components (mean over z) from a picnix Run.
 
@@ -29,6 +86,7 @@ def plot_field_snapshot(run, step, *, save=None):
     bx = uf[..., 3].mean(axis=0) / Beq
     by = uf[..., 4].mean(axis=0) / Beq - B0 / Beq
     bz = uf[..., 5].mean(axis=0) / Beq
+    b_mag = np.sqrt(bx**2 + by**2 + bz**2)
 
     vmax = max(np.abs(bx).max(), np.abs(by).max(), np.abs(bz).max())
 
@@ -38,27 +96,35 @@ def plot_field_snapshot(run, step, *, save=None):
 
     time = run.get_time_at("field", step) / np.sqrt(mime)
 
-    fig = plt.figure(figsize=(10, 4))
+    fig = plt.figure(figsize=(16, 3.77))
     gs = fig.add_gridspec(
         1,
-        3,
+        8,
+        width_ratios=[1, 0.05, 1, 0.05, 1, 0.05, 1, 0.05],
         left=0.06,
-        right=0.90,
-        bottom=0.15,
-        top=0.83,
-        wspace=0.15,
+        right=0.96,
+        bottom=0.1327,
+        top=0.8407,
+        wspace=0.25,
     )
-    axs = [fig.add_subplot(gs[0, i]) for i in range(3)]
+
+    axs = [fig.add_subplot(gs[0, col]) for col in range(0, 8, 2)]
 
     labels = [
+        r"$|B| / B_{\mathrm{eq}}$",
         r"$\delta B_x / B_{\mathrm{eq}}$",
         r"$\delta B_y / B_{\mathrm{eq}}$",
         r"$\delta B_z / B_{\mathrm{eq}}$",
     ]
-    fields = [bx, by, bz]
+    fields = [b_mag, bx, by, bz]
+    vmins = [0.0, -vmax, -vmax, -vmax]
+    vmaxs = [b_mag.max(), vmax, vmax, vmax]
+    cmaps = ["viridis", "RdBu_r", "RdBu_r", "RdBu_r"]
 
-    for ax, label, bfield in zip(axs, labels, fields, strict=True):
-        ax.pcolormesh(X, Y, bfield, cmap="RdBu_r", vmin=-vmax, vmax=vmax, shading="nearest")
+    for ax, label, bfield, vmin, vmax_val, cmap in zip(
+        axs, labels, fields, vmins, vmaxs, cmaps, strict=True
+    ):
+        ax.pcolormesh(X, Y, bfield, cmap=cmap, vmin=vmin, vmax=vmax_val, shading="nearest")
         ax.set_aspect("equal")
         ax.set_title(label)
         ax.set_xlabel(r"$x / (c/\omega_{\mathrm{pi}})$")
@@ -68,15 +134,15 @@ def plot_field_snapshot(run, step, *, save=None):
         ax.yaxis.set_minor_locator(plt.MultipleLocator(0.5))
     axs[0].set_ylabel(r"$y / (c/\omega_{\mathrm{pi}})$")
 
-    sm = plt.cm.ScalarMappable(cmap="RdBu_r", norm=plt.Normalize(vmin=-vmax, vmax=vmax))
-    sm.set_array([])
-
     fig.canvas.draw()
-    ax_pos = axs[-1].get_position()
-    cbar_x0 = ax_pos.x1 + 0.02
-    cbar_width = 0.02
-    cbar_ax = fig.add_axes([cbar_x0, ax_pos.y0, cbar_width, ax_pos.y1 - ax_pos.y0])
-    fig.colorbar(sm, cax=cbar_ax)
+    for ax, vmin, vmax_val, cmap in zip(axs, vmins, vmaxs, cmaps, strict=True):
+        ax_pos = ax.get_position()
+        cbar_x0 = ax_pos.x1 + 0.01
+        cbar_width = 0.01
+        cbar_ax = fig.add_axes([cbar_x0, ax_pos.y0, cbar_width, ax_pos.y1 - ax_pos.y0])
+        sm = plt.cm.ScalarMappable(cmap=cmap, norm=plt.Normalize(vmin=vmin, vmax=vmax_val))
+        sm.set_array([])
+        fig.colorbar(sm, cax=cbar_ax)
 
     fig.suptitle(rf"$\omega_{{\mathrm{{pi}}}} t = {time:.2f}$")
 
@@ -228,24 +294,35 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Plot PIC-NIX snapshots")
     parser.add_argument("profile", help="Path to picnix profile (.msg)")
-    parser.add_argument("step", type=int, help="Simulation step to plot")
+    parser.add_argument(
+        "step",
+        type=int,
+        nargs="?",
+        help="Simulation step (required for field/moment)",
+    )
     parser.add_argument(
         "-t",
         "--type",
-        choices=["field", "moment"],
+        choices=["field", "moment", "evolution"],
         default="field",
-        help="Plot type: field (B-field) or moment (density/velocity)",
+        help="Plot type: field (B-field), moment (density/velocity), or evolution (B^2 vs time)",
     )
     parser.add_argument("-o", "--output", default=None, help="Output image filepath")
     args = parser.parse_args()
+
+    if args.type != "evolution" and args.step is None:
+        parser.error("step is required for --type field|moment")
 
     run = picnix.Run(args.profile)
 
     if args.type == "field":
         save_path = args.output or f"field_snapshot_{args.step}.png"
         fig, _ = plot_field_snapshot(run, args.step, save=save_path)
-    else:
+    elif args.type == "moment":
         save_path = args.output or f"moment_snapshot_{args.step}.png"
         fig, _ = plot_moment_snapshot(run, args.step, save=save_path)
+    else:
+        save_path = args.output or "field_evolution.png"
+        fig, _ = plot_field_evolution(run, save=save_path)
 
     print(f"Saved to {save_path}")
