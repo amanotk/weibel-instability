@@ -60,6 +60,34 @@ def plot_field_evolution(run, *, save=None):
     return fig, ax
 
 
+def plot_field_lines(ax, az, X, Y, *, nlines=10):
+    """Overlay field-line contours on an axis.
+
+    Parameters
+    ----------
+    ax : Axes
+        Matplotlib axis to draw on.
+    az : (Ny, Nx) array
+        Vector potential (any absolute scale works).
+    X, Y : (Ny, Nx) arrays
+        Grid coordinates matching ``az``.
+    nlines : int
+        Number of contour lines to draw (evenly spaced).
+    """
+    az_min = az.min()
+    az_max = az.max()
+    levels = np.linspace(az_min, az_max, nlines + 2)[1:-1]
+    ax.contour(
+        X,
+        Y,
+        az,
+        levels=levels,
+        colors="k",
+        linewidths=0.7,
+        linestyles="solid",
+    )
+
+
 def plot_field_snapshot(run, step, *, save=None):
     """Plot 2D snapshot of field components (mean over z) from a picnix Run.
 
@@ -73,6 +101,8 @@ def plot_field_snapshot(run, step, *, save=None):
         Filepath to save the figure.
     """
     from matplotlib import pyplot as plt
+
+    from src.fields import calc_vector_potential_2d
 
     data = run.read_at("field", step)
     mime = run.config["parameter"]["mime"]
@@ -88,10 +118,13 @@ def plot_field_snapshot(run, step, *, save=None):
     bz = uf[..., 5].mean(axis=0) / Beq
     b_mag = np.sqrt(bx**2 + by**2 + bz**2)
 
-    vmax = max(np.abs(bx).max(), np.abs(by).max(), np.abs(bz).max())
-
     xc = run.xc / np.sqrt(mime)
     yc = run.yc / np.sqrt(mime)
+
+    az = calc_vector_potential_2d(bx, by, run.delh)
+
+    vmax = max(np.abs(bx).max(), np.abs(by).max(), np.abs(bz).max())
+
     X, Y = np.meshgrid(xc, yc, indexing="xy")
 
     time = run.get_time_at("field", step) / np.sqrt(mime)
@@ -124,7 +157,16 @@ def plot_field_snapshot(run, step, *, save=None):
     for ax, label, bfield, vmin, vmax_val, cmap in zip(
         axs, labels, fields, vmins, vmaxs, cmaps, strict=True
     ):
-        ax.pcolormesh(X, Y, bfield, cmap=cmap, vmin=vmin, vmax=vmax_val, shading="nearest")
+        ax.pcolormesh(
+            X,
+            Y,
+            bfield,
+            cmap=cmap,
+            vmin=vmin,
+            vmax=vmax_val,
+            shading="nearest",
+            rasterized=True,
+        )
         ax.set_aspect("equal")
         ax.set_title(label)
         ax.set_xlabel(r"$x / (c/\omega_{\mathrm{pi}})$")
@@ -133,6 +175,9 @@ def plot_field_snapshot(run, step, *, save=None):
         ax.yaxis.set_major_locator(plt.MultipleLocator(2.0))
         ax.yaxis.set_minor_locator(plt.MultipleLocator(0.5))
     axs[0].set_ylabel(r"$y / (c/\omega_{\mathrm{pi}})$")
+
+    for ax in axs:
+        plot_field_lines(ax, az, X, Y)
 
     fig.canvas.draw()
     for ax, vmin, vmax_val, cmap in zip(axs, vmins, vmaxs, cmaps, strict=True):
@@ -166,12 +211,15 @@ def plot_moment_snapshot(run, step, *, save=None):
     """
     from matplotlib import pyplot as plt
 
+    from src.fields import calc_vector_potential_2d
+
     data = run.read_at("field", step)
     mime = run.config["parameter"]["mime"]
     alpha = run.config["parameter"]["alpha"]
     ush = run.config["parameter"]["ush"]
     vsh = ush / np.sqrt(1.0 + ush**2)
 
+    uf = data["uf"]
     um = data["um"]
     Ns = um.shape[-2]
 
@@ -191,6 +239,11 @@ def plot_moment_snapshot(run, step, *, save=None):
 
     xc = run.xc / np.sqrt(mime)
     yc = run.yc / np.sqrt(mime)
+
+    bx_raw = uf[..., 3].mean(axis=0)
+    by_raw = uf[..., 4].mean(axis=0)
+    az = calc_vector_potential_2d(bx_raw, by_raw, run.delh)
+
     X, Y = np.meshgrid(xc, yc, indexing="xy")
 
     time = run.get_time_at("field", step) / np.sqrt(mime)
@@ -236,7 +289,16 @@ def plot_moment_snapshot(run, step, *, save=None):
             zip(panels, vmins, vmaxs, cmaps, strict=True)
         ):
             ax = axs[s][col]
-            ax.pcolormesh(X, Y, panel, cmap=cmap, vmin=vmin, vmax=vmax, shading="nearest")
+            ax.pcolormesh(
+                X,
+                Y,
+                panel,
+                cmap=cmap,
+                vmin=vmin,
+                vmax=vmax,
+                shading="nearest",
+                rasterized=True,
+            )
             ax.set_aspect("equal")
 
             if s == 0:
@@ -264,6 +326,10 @@ def plot_moment_snapshot(run, step, *, save=None):
             ha="right",
             fontsize=12,
         )
+
+    for row in range(Ns):
+        for ax in axs[row]:
+            plot_field_lines(ax, az, X, Y)
 
     fig.canvas.draw()
     for ax, vmin, vmax, cmap in all_pos:
