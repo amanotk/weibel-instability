@@ -11,7 +11,9 @@ def calc_vector_potential_2d(bx, by, delh):
     The discrete Laplacian inverse uses the symbol that matches the
     centered-difference-of-centered-difference operator.
 
-    Assumes periodic boundary conditions in both x and y directions.
+    Non-zero mean components of Bx and By are recovered as linear ramps
+    (Az = B̄x·y − B̄y·x) and added back to the FFT solution, so the
+    returned Az includes the full absolute-scale vector potential.
 
     Parameters
     ----------
@@ -25,12 +27,14 @@ def calc_vector_potential_2d(bx, by, delh):
     Returns
     -------
     Az : (Ny, Nx) array
-        Vector potential Az at cell centers, zero-mean gauge fixed.
+        Vector potential Az at cell centers including mean-field contribution.
     """
     Ny, Nx = bx.shape
 
     dBy_dx = (np.roll(by, -1, axis=1) - np.roll(by, 1, axis=1)) / (2.0 * delh)
     dBx_dy = (np.roll(bx, -1, axis=0) - np.roll(bx, 1, axis=0)) / (2.0 * delh)
+    Bx_avg = np.mean(bx)
+    By_avg = np.mean(by)
     R = dBy_dx - dBx_dy
 
     R_hat = np.fft.rfft2(R)
@@ -41,9 +45,9 @@ def calc_vector_potential_2d(bx, by, delh):
     KX = KX[:, : Nx // 2 + 1]
     KY = KY[:, : Nx // 2 + 1]
 
-    D = (np.sin(2.0 * np.pi * KX) ** 2 + np.sin(2.0 * np.pi * KY) ** 2) / delh**2
+    D = (np.sin(2.0 * np.pi * KX) ** 2 + np.sin(2.0 * np.pi * KY) ** 2) / delh**2 + 1.0e-15
+    Az = np.fft.irfft2(R_hat / D, s=(Ny, Nx))
+    Az_By_avg = -By_avg * np.arange(Nx)[None, :] * delh
+    Az_Bx_avg = +Bx_avg * np.arange(Ny)[:, None] * delh
 
-    with np.errstate(divide="ignore", invalid="ignore"):
-        Az_hat = np.where(D > 1e-15, R_hat / D, 0.0)
-
-    return np.fft.irfft2(Az_hat, s=(Ny, Nx))
+    return Az + Az_By_avg + Az_Bx_avg

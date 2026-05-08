@@ -16,6 +16,7 @@ dependencies = [
   "picnix @ git+https://github.com/amanotk/pic-nix.git#subdirectory=python",
   "pyzmq>=27.1.0",
   "scipy>=1.13",
+  "mpi4py>=3.1",
 ]
 
 [dependency-groups]

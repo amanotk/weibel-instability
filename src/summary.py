@@ -76,6 +76,8 @@ def plot_field_lines(ax, az, X, Y, *, nlines=10):
     """
     az_min = az.min()
     az_max = az.max()
+    if az_max - az_min < 1e-15:
+        return
     levels = np.linspace(az_min, az_max, nlines + 2)[1:-1]
     ax.contour(
         X,
@@ -113,15 +115,18 @@ def plot_field_snapshot(run, step, *, save=None):
     Beq = np.sqrt(alpha * (1 - alpha) * ush**2 * mime)
 
     uf = data["uf"]
-    bx = uf[..., 3].mean(axis=0) / Beq
-    by = uf[..., 4].mean(axis=0) / Beq - B0 / Beq
-    bz = uf[..., 5].mean(axis=0) / Beq
+    bx_raw = uf[..., 3].mean(axis=0)
+    by_raw = uf[..., 4].mean(axis=0)
+    bz_raw = uf[..., 5].mean(axis=0)
+    az = calc_vector_potential_2d(bx_raw, by_raw, run.delh)
+
+    bx = bx_raw / Beq
+    by = by_raw / Beq - B0 / Beq
+    bz = bz_raw / Beq
     b_mag = np.sqrt(bx**2 + by**2 + bz**2)
 
     xc = run.xc / np.sqrt(mime)
     yc = run.yc / np.sqrt(mime)
-
-    az = calc_vector_potential_2d(bx, by, run.delh)
 
     vmax = max(np.abs(bx).max(), np.abs(by).max(), np.abs(bz).max())
 
