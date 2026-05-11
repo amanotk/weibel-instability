@@ -125,10 +125,10 @@ def plot_field_snapshot(run, step, *, save=None):
     bz = bz_raw / Beq
     b_mag = np.sqrt(bx**2 + by**2 + bz**2)
 
-    xc = run.xc / np.sqrt(mime)
-    yc = run.yc / np.sqrt(mime)
-
     vmax = max(np.abs(bx).max(), np.abs(by).max(), np.abs(bz).max())
+
+    xc = data["xc"] / np.sqrt(mime)
+    yc = data["yc"] / np.sqrt(mime)
 
     X, Y = np.meshgrid(xc, yc, indexing="xy")
 
@@ -242,8 +242,8 @@ def plot_moment_snapshot(run, step, *, save=None):
         r"$\delta V_z / V_{\mathrm{sh}}$",
     ]
 
-    xc = run.xc / np.sqrt(mime)
-    yc = run.yc / np.sqrt(mime)
+    xc = data["xc"] / np.sqrt(mime)
+    yc = data["yc"] / np.sqrt(mime)
 
     bx_raw = uf[..., 3].mean(axis=0)
     by_raw = uf[..., 4].mean(axis=0)
