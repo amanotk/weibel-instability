@@ -150,7 +150,7 @@ def plot_field_snapshot(run, step, *, save=None):
     axs = [fig.add_subplot(gs[0, col]) for col in range(0, 8, 2)]
 
     labels = [
-        r"$(|B| - B_0) / B_{\mathrm{eq}}$",
+        r"$\delta |B| / B_{\mathrm{eq}}$",
         r"$\delta B_x / B_{\mathrm{eq}}$",
         r"$\delta B_y / B_{\mathrm{eq}}$",
         r"$\delta B_z / B_{\mathrm{eq}}$",
