@@ -1,5 +1,7 @@
 """Summary plots for PIC-NIX simulation data."""
 
+import pathlib
+
 import numpy as np
 
 
@@ -15,29 +17,41 @@ def plot_field_evolution(run, *, save=None):
     """
     from matplotlib import pyplot as plt
 
-    mime = run.config["parameter"]["mime"]
-    alpha = run.config["parameter"]["alpha"]
-    ush = run.config["parameter"]["ush"]
-    Beq = np.sqrt(alpha * (1 - alpha) * ush**2 * mime)
+    data_dir = pathlib.Path(run.format_log_filename()).parent
+    energy_file = data_dir / "field_energy.npz"
 
-    steps = run.get_step("field")
-    times = run.get_time("field")
+    if energy_file.exists():
+        mime = run.config["parameter"]["mime"]
+        d = np.load(str(energy_file))
+        times = d["times"]
+        bx2 = d["bx2"]
+        by2 = d["by2"]
+        bz2 = d["bz2"]
+    else:
+        mime = run.config["parameter"]["mime"]
+        alpha = run.config["parameter"]["alpha"]
+        ush = run.config["parameter"]["ush"]
+        Beq = np.sqrt(alpha * (1 - alpha) * ush**2 * mime)
 
-    bx2_list = []
-    by2_list = []
-    bz2_list = []
+        steps = run.get_step("field")
+        times = run.get_time("field")
 
-    for step in steps:
-        data = run.read_at("field", step)
-        uf = data["uf"]
-        bx2_list.append(np.mean(uf[..., 3] ** 2) / Beq**2)
-        by2_list.append(np.mean(uf[..., 4] ** 2) / Beq**2)
-        bz2_list.append(np.mean(uf[..., 5] ** 2) / Beq**2)
+        bx2_list = []
+        by2_list = []
+        bz2_list = []
+
+        for step in steps:
+            data = run.read_at("field", step)
+            uf = data["uf"]
+            bx2_list.append(np.mean(uf[..., 3] ** 2) / Beq**2)
+            by2_list.append(np.mean(uf[..., 4] ** 2) / Beq**2)
+            bz2_list.append(np.mean(uf[..., 5] ** 2) / Beq**2)
+
+        bx2 = np.array(bx2_list)
+        by2 = np.array(by2_list)
+        bz2 = np.array(bz2_list)
 
     wt = times / np.sqrt(mime)
-    bx2 = np.array(bx2_list)
-    by2 = np.array(by2_list)
-    bz2 = np.array(bz2_list)
 
     fig = plt.figure(figsize=(6, 4))
     ax = fig.gca()
