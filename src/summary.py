@@ -120,10 +120,11 @@ def plot_field_snapshot(run, step, *, save=None):
     bz_raw = uf[..., 5].mean(axis=0)
     az = calc_vector_potential_2d(bx_raw, by_raw, run.delh)
 
+    b_mag = (np.sqrt(bx_raw**2 + by_raw**2 + bz_raw**2) - B0) / Beq
+
     bx = bx_raw / Beq
     by = by_raw / Beq - B0 / Beq
     bz = bz_raw / Beq
-    b_mag = np.sqrt(bx**2 + by**2 + bz**2)
 
     vmax = max(np.abs(bx).max(), np.abs(by).max(), np.abs(bz).max())
 
@@ -149,7 +150,7 @@ def plot_field_snapshot(run, step, *, save=None):
     axs = [fig.add_subplot(gs[0, col]) for col in range(0, 8, 2)]
 
     labels = [
-        r"$|B| / B_{\mathrm{eq}}$",
+        r"$(|B| - B_0) / B_{\mathrm{eq}}$",
         r"$\delta B_x / B_{\mathrm{eq}}$",
         r"$\delta B_y / B_{\mathrm{eq}}$",
         r"$\delta B_z / B_{\mathrm{eq}}$",
