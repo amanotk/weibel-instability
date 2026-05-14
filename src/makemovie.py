@@ -169,7 +169,7 @@ def main() -> None:
     parser.add_argument("--end", type=int, default=None, help="Last diagnostic step")
     parser.add_argument("--stride", type=int, default=1, help="Every N-th diagnostic (default: 1)")
     parser.add_argument("--fps", type=int, default=10, help="Frames per second (default: 10)")
-    parser.add_argument("-o", "--output-dir", default="./movie/", help="Output directory (default: ./movie/)")
+    parser.add_argument("-o", "--output-dir", default="./movie/", help="Output directory")
     parser.add_argument("--dry-run", action="store_true", help="Preview without generating")
     parser.add_argument("--cleanup", action="store_true", help="Remove frames dir after encoding")
     args = parser.parse_args()
