@@ -95,6 +95,10 @@ GitHub Pages publishing policy:
 - Commit only small fixtures needed for tests or reproducible examples.
 - Prefer deterministic scripts over manual steps when generating artifacts.
 
+## CLI Tools
+
+All CLI tools are documented in [docs/cli.md](docs/cli.md). When a user asks about running or generating plots/movies from simulation data, refer to that document for usage, arguments, and examples.
+
 ## Agent Behavior Expectations
 
 - Explain what changed and why, especially for scientific logic.

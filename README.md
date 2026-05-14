@@ -30,7 +30,10 @@ uv sync
 ```bash
 uv run python src/summary.py /path/to/profile.msg STEP -t field
 uv run python src/summary.py /path/to/profile.msg STEP -t moment
+uv run python src/summary.py /path/to/profile.msg -t evolution
 ```
+
+See [docs/cli.md](docs/cli.md) for full CLI reference, including MPI-based frame generation (`makemovie.py`) and parallel scalar computation (`compute_scalars.py`).
 
 3. Open a notebook:
 
